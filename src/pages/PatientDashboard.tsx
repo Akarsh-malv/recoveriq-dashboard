@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Activity, HeartPulse, Moon, Search } from 'lucide-react';
+import { Activity, HeartPulse, Moon } from 'lucide-react';
 import { PatientAppointment, PatientProfile } from '../types/patient';
 import { seedPatients, getPatientDetail } from '../mocks/seedPatients';
 import { PatientSummaryCards } from '../components/patient/PatientSummaryCards';
@@ -136,14 +136,6 @@ export function PatientDashboard({ profile }: PatientDashboardProps) {
               <h1 className="text-2xl font-semibold text-gray-900">Patient Details</h1>
               <p className="mt-1 text-sm text-gray-600">Track your recovery and understand changes over time, {profile.name}.</p>
             </div>
-            <label className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-              <input
-                aria-label="Search patient page content"
-                placeholder="Search patient..."
-                className="h-10 w-60 rounded-lg border border-gray-200 bg-white pl-9 pr-3 text-sm text-neutral-darkest focus:outline-none focus:ring-2 focus:ring-primary/30"
-              />
-            </label>
           </div>
           <div className="mt-3 flex gap-2">
             <button
