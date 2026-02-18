@@ -54,14 +54,14 @@ function App() {
     };
 
     return (
-      <div className="h-screen flex bg-neutral-light">
+      <div className="flex h-screen flex-col bg-neutral-light md:flex-row">
         <ClinicianNav
           currentView={clinicianView}
           onNavigate={(view) => setClinicianView(view as ClinicianView)}
           onLogout={signOut}
           clinicianName={profile?.fullName}
         />
-        <div className="flex-1 min-h-0 flex flex-col">
+        <div className="flex min-h-0 flex-1 flex-col">
           <div className="flex-1 overflow-hidden">
             {clinicianView === 'dashboard' && (
               <ClinicianDashboard onMomentumFilterSelect={handleMomentumFilterSelect} />
@@ -102,14 +102,14 @@ function App() {
   if (role === 'patient') {
     const patientProfile = buildPatientProfile(profile?.fullName);
     return (
-      <div className="h-screen flex bg-neutral-light">
+      <div className="flex h-screen flex-col bg-neutral-light md:flex-row">
         <PatientNav
           currentView={patientView}
           onNavigate={setPatientView}
           onLogout={signOut}
           patientName={profile?.fullName}
         />
-        <div className="flex-1 min-h-0">
+        <div className="min-h-0 flex-1">
           {patientView === 'home' && <PatientDashboard profile={patientProfile} />}
           {patientView === 'assistant' && <PatientAssistantPage profile={patientProfile} />}
           {patientView === 'settings' && (

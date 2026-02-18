@@ -18,8 +18,8 @@ export function ClinicianNav({ currentView, onNavigate, onLogout, clinicianName 
   ];
 
   return (
-    <div className="w-72 bg-neutral-light border-r border-gray-200 h-screen flex flex-col">
-      <div className="p-6 border-b border-gray-200">
+    <div className="flex w-full flex-col border-b border-gray-200 bg-neutral-light md:h-screen md:w-72 md:border-r md:border-b-0">
+      <div className="border-b border-gray-200 p-4 md:p-6">
         <div className="flex items-center gap-3">
           <RecoverIQLogo size="sm" />
           <div>
@@ -29,16 +29,16 @@ export function ClinicianNav({ currentView, onNavigate, onLogout, clinicianName 
         </div>
       </div>
 
-      <nav className="flex-1 p-4">
-        <ul className="space-y-2">
+      <nav className="flex-1 p-3 md:p-4">
+        <ul className="flex gap-2 overflow-x-auto md:block md:space-y-2">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = currentView === item.id;
             return (
-              <li key={item.id}>
+              <li key={item.id} className="shrink-0">
                 <button
                   onClick={() => onNavigate(item.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
+                  className={`flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors md:py-3 ${
                     isActive
                       ? 'bg-primary-light text-primary'
                       : 'text-neutral-darkest hover:bg-gray-100'
@@ -53,8 +53,8 @@ export function ClinicianNav({ currentView, onNavigate, onLogout, clinicianName 
         </ul>
       </nav>
 
-      <div className="p-4 border-t border-gray-200">
-        <div className="bg-white border border-gray-200 rounded-xl p-3 mb-2">
+      <div className="hidden border-t border-gray-200 p-4 md:block">
+        <div className="mb-2 rounded-xl border border-gray-200 bg-white p-3">
           <div className="flex items-center gap-3">
             <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary text-white font-semibold">
               {(clinicianName || 'Clinician').charAt(0).toUpperCase()}
@@ -72,6 +72,17 @@ export function ClinicianNav({ currentView, onNavigate, onLogout, clinicianName 
           className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm text-neutral-darkest border border-gray-300 hover:bg-neutral-light rounded-xl bg-white"
         >
           <LogOut className="w-4 h-4" />
+          Sign out
+        </button>
+      </div>
+
+      <div className="flex items-center justify-between border-t border-gray-200 p-3 md:hidden">
+        <p className="truncate text-sm font-medium text-neutral-darkest">{clinicianName || 'Clinician'}</p>
+        <button
+          onClick={onLogout}
+          className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-neutral-darkest"
+        >
+          <LogOut className="h-4 w-4" />
           Sign out
         </button>
       </div>
