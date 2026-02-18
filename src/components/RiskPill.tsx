@@ -8,9 +8,9 @@ interface RiskPillProps {
 
 export function RiskPill({ tier, score, size = 'md' }: RiskPillProps) {
   const colors = {
-    low: 'bg-green-50 text-green-700 border-green-200',
-    medium: 'bg-amber-50 text-amber-700 border-amber-200',
-    high: 'bg-red-50 text-red-700 border-red-200',
+    low: 'bg-success/10 text-success border-success/30',
+    medium: 'bg-warning/10 text-warning border-warning/30',
+    high: 'bg-danger/10 text-danger border-danger/30',
   };
 
   const sizeStyles = {
@@ -23,7 +23,7 @@ export function RiskPill({ tier, score, size = 'md' }: RiskPillProps) {
       className={`inline-flex items-center gap-1 rounded-full border font-medium ${colors[tier]} ${sizeStyles[size]}`}
     >
       {tier.charAt(0).toUpperCase() + tier.slice(1)}
-      {score !== undefined && <span className="font-semibold">({score})</span>}
+      {score !== undefined && <span className="font-semibold text-[0.9em]">RPS {Math.round(score)}</span>}
     </span>
   );
 }

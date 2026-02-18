@@ -17,9 +17,9 @@ export function ActivityChart({ data, baseline }: ActivityChartProps) {
           <Line
             type="monotone"
             dataKey="value"
-            stroke="#10b981"
+            stroke="#22C55E"
             strokeWidth={3}
-            dot={{ r: 3, strokeWidth: 1, stroke: '#10b981', fill: '#fff' }}
+            dot={{ r: 3, strokeWidth: 1, stroke: '#22C55E', fill: '#fff' }}
             activeDot={{ r: 5 }}
           />
         </LineChart>

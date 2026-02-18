@@ -1,128 +1,236 @@
-import { useState } from 'react';
-import { Plus, X } from 'lucide-react';
-import { Button } from '../components/Button';
-
-type TaskStatus = 'new' | 'in_progress' | 'completed';
-
-interface Task {
-  id: string;
-  title: string;
-  patient: string;
-  status: TaskStatus;
-}
+import { useEffect, useMemo, useState } from 'react';
+import { Plus, Search } from 'lucide-react';
+import { seedPatients } from '../mocks/seedPatients';
+import { generateAlertsFromPatients } from '../utils/alertGenerator';
+import { generateOutreachTasks } from '../utils/outreachGenerator';
+import { OutreachTask, TaskPriority, TaskStatus, TaskType } from '../types/outreach';
+import { isDueToday, isOverdue } from '../utils/date';
+import { OutreachSummaryStrip } from '../components/outreach/OutreachSummaryStrip';
+import { DueFilter, OutreachFilterBar } from '../components/outreach/OutreachFilterBar';
+import { OutreachTaskQueue } from '../components/outreach/OutreachTaskQueue';
+import { OutreachTaskDetail } from '../components/outreach/OutreachTaskDetail';
+import { CreateTaskModal } from '../components/outreach/CreateTaskModal';
 
 export function OutreachScreen() {
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [open, setOpen] = useState(false);
-  const [form, setForm] = useState<{ title: string; patient: string; status: TaskStatus }>({
-    title: '',
-    patient: '',
-    status: 'new',
-  });
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<TaskStatus | 'all'>('all');
+  const [priorityFilter, setPriorityFilter] = useState<TaskPriority | 'all'>('all');
+  const [dueFilter, setDueFilter] = useState<DueFilter>('all');
+  const [createOpen, setCreateOpen] = useState(false);
+  const [tasks, setTasks] = useState<OutreachTask[]>(() =>
+    generateOutreachTasks(seedPatients, generateAlertsFromPatients(seedPatients))
+  );
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
 
-  const addTask = () => {
-    if (!form.title || !form.patient) return;
-    setTasks((prev) => [...prev, { id: crypto.randomUUID(), ...form }]);
-    setForm({ title: '', patient: '', status: 'new' });
-    setOpen(false);
+  const summary = useMemo(
+    () => ({
+      dueToday: Math.round(tasks.filter((task) => task.status !== 'done' && isDueToday(task.dueAt)).length),
+      overdue: Math.round(tasks.filter((task) => task.status !== 'done' && isOverdue(task.dueAt)).length),
+      highPriority: Math.round(tasks.filter((task) => task.priority === 'high').length),
+      completed: Math.round(tasks.filter((task) => task.status === 'done').length),
+    }),
+    [tasks]
+  );
+
+  const filteredTasks = useMemo(() => {
+    return tasks
+      .filter((task) => {
+        const matchesSearch = task.patientName.toLowerCase().includes(search.trim().toLowerCase());
+        const matchesStatus = statusFilter === 'all' || task.status === statusFilter;
+        const matchesPriority = priorityFilter === 'all' || task.priority === priorityFilter;
+        const matchesDue =
+          dueFilter === 'all' ||
+          (dueFilter === 'due_today' && task.status !== 'done' && isDueToday(task.dueAt)) ||
+          (dueFilter === 'overdue' && task.status !== 'done' && isOverdue(task.dueAt)) ||
+          (dueFilter === 'upcoming' && !isOverdue(task.dueAt) && !isDueToday(task.dueAt));
+
+        return matchesSearch && matchesStatus && matchesPriority && matchesDue;
+      })
+      .sort((a, b) => {
+        const priorityRank: Record<TaskPriority, number> = { high: 3, medium: 2, low: 1 };
+        const byPriority = priorityRank[b.priority] - priorityRank[a.priority];
+        if (byPriority !== 0) return byPriority;
+        return new Date(a.dueAt).getTime() - new Date(b.dueAt).getTime();
+      });
+  }, [tasks, search, statusFilter, priorityFilter, dueFilter]);
+
+  useEffect(() => {
+    if (selectedTaskId && !filteredTasks.some((task) => task.id === selectedTaskId)) {
+      setSelectedTaskId(null);
+    }
+  }, [filteredTasks, selectedTaskId]);
+
+  const selectedTask = useMemo(
+    () => tasks.find((task) => task.id === selectedTaskId) ?? null,
+    [tasks, selectedTaskId]
+  );
+
+  const handleSelectTask = (taskId: string) => {
+    setSelectedTaskId((current) => (current === taskId ? null : taskId));
+  };
+
+  const updateTask = (taskId: string, patch: Partial<OutreachTask>) => {
+    setTasks((current) =>
+      current.map((task) =>
+        task.id === taskId ? { ...task, ...patch, lastUpdatedAt: new Date().toISOString() } : task
+      )
+    );
+  };
+
+  const handleMarkComplete = (taskId: string) => {
+    updateTask(taskId, { status: 'done', outcome: 'reached' });
+    setSelectedTaskId(null);
+  };
+
+  const handleEscalate = (taskId: string) => {
+    const task = tasks.find((entry) => entry.id === taskId);
+    if (!task) return;
+    const updatedNotes = task.notes ? `[Escalated] ${task.notes}` : '[Escalated] Requires clinician review.';
+    updateTask(taskId, { status: 'in_progress', outcome: 'escalated', notes: updatedNotes });
+  };
+
+  const handleReschedule = (taskId: string, dueAt: string) => {
+    updateTask(taskId, { dueAt });
+  };
+
+  const handleCreateTask = (payload: {
+    patientId: string;
+    type: TaskType;
+    priority: TaskPriority;
+    dueAt: string;
+    reason: string;
+    notes: string;
+  }) => {
+    const patient = seedPatients.find((entry) => entry.id === payload.patientId);
+    if (!patient) return;
+
+    const daysSinceDischarge = Math.max(
+      0,
+      Math.floor((Date.now() - new Date(patient.dischargeDate).getTime()) / (1000 * 60 * 60 * 24))
+    );
+
+    const newTask: OutreachTask = {
+      id: `outreach-${crypto.randomUUID()}`,
+      patientId: patient.id,
+      patientName: patient.name,
+      daysSinceDischarge,
+      priority: payload.priority,
+      status: 'todo',
+      outcome: 'none',
+      type: payload.type,
+      reason: payload.reason,
+      dueAt: payload.dueAt,
+      createdAt: new Date().toISOString(),
+      lastUpdatedAt: new Date().toISOString(),
+      notes: payload.notes,
+      patientSnapshot: {
+        riskScore: Math.round(patient.riskScore),
+        restingHRCurrent: Math.round(patient.metrics.restingHR.current),
+        restingHRDelta: Math.round(patient.metrics.restingHR.percentChange),
+        stepsCurrent: Math.round(patient.metrics.steps.current),
+        stepsDelta: Math.round(patient.metrics.steps.percentChange),
+        sleepCurrent: Math.round(patient.metrics.sleep.current),
+        sleepDelta: Math.round(patient.metrics.sleep.percentChange),
+      },
+    };
+
+    setTasks((current) => [newTask, ...current]);
+    setSelectedTaskId(newTask.id);
   };
 
   return (
-    <div className="h-full bg-gray-50">
-      <div className="bg-white border-b border-gray-200 p-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Outreach</h1>
-          <p className="text-sm text-gray-600">Create and manage outreach tasks</p>
-        </div>
-        <Button onClick={() => setOpen(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          Create task
-        </Button>
-      </div>
-
-      <div className="p-6">
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">Task</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">Patient</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {tasks.length === 0 ? (
-                <tr>
-                  <td className="px-4 py-6 text-center text-sm text-gray-600" colSpan={3}>
-                    No outreach tasks yet
-                  </td>
-                </tr>
-              ) : (
-                tasks.map((task) => (
-                  <tr key={task.id}>
-                    <td className="px-4 py-3 text-sm font-semibold text-gray-900">{task.title}</td>
-                    <td className="px-4 py-3 text-sm text-gray-700">{task.patient}</td>
-                    <td className="px-4 py-3">
-                      <span className="px-2 py-1 text-xs rounded-full border bg-gray-50 text-gray-700">
-                        {task.status.replace('_', ' ')}
-                      </span>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {open && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Create outreach task</h3>
-              <button onClick={() => setOpen(false)}>
-                <X className="w-5 h-5 text-gray-500" />
+    <div className="h-full overflow-auto bg-neutral-light">
+      <div className="mx-auto max-w-7xl space-y-4 p-6">
+        <header className="rounded-xl border border-gray-200 bg-white p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-sm text-neutral-mid">What follow-up are you working on?</p>
+              <h1 className="text-2xl font-semibold text-neutral-darkest">Follow-Ups</h1>
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="relative hidden md:block">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-mid" />
+                <input
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="Search patient..."
+                  className="h-10 w-60 rounded-lg border border-gray-300 bg-white pl-9 pr-3 text-sm text-neutral-darkest focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+              </label>
+              <button
+                type="button"
+                className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-white hover:bg-primary-dark"
+                onClick={() => setCreateOpen(true)}
+              >
+                <Plus className="h-4 w-4" />
+                Create Task
               </button>
             </div>
-            <div className="space-y-3">
-              <div>
-                <label className="text-sm font-medium text-gray-700">Title</label>
-                <input
-                  className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={form.title}
-                  onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-                  placeholder="Schedule follow-up call"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-700">Patient</label>
-                <input
-                  className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={form.patient}
-                  onChange={(e) => setForm((f) => ({ ...f, patient: e.target.value }))}
-                  placeholder="Sarah Johnson"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-700">Status</label>
-                <select
-                  className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={form.status}
-                  onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as TaskStatus }))}
-                >
-                  <option value="new">New</option>
-                  <option value="in_progress">In Progress</option>
-                  <option value="completed">Completed</option>
-                </select>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 mt-6">
-              <Button variant="secondary" onClick={() => setOpen(false)}>Cancel</Button>
-              <Button onClick={addTask}>Create</Button>
-            </div>
           </div>
-        </div>
-      )}
+        </header>
+
+        <OutreachSummaryStrip
+          dueToday={summary.dueToday}
+          overdue={summary.overdue}
+          highPriority={summary.highPriority}
+          completed={summary.completed}
+        />
+
+        <OutreachFilterBar
+          status={statusFilter}
+          priority={priorityFilter}
+          due={dueFilter}
+          onStatusChange={setStatusFilter}
+          onPriorityChange={setPriorityFilter}
+          onDueChange={setDueFilter}
+        />
+
+        {tasks.length === 0 ? (
+          <div className="rounded-xl border border-gray-200 bg-white p-10 text-center shadow-sm">
+            <h2 className="text-lg font-semibold text-neutral-darkest">No outreach tasks yet</h2>
+            <p className="mt-2 text-sm text-neutral-mid">Tip: Create tasks from Alerts or prioritize D+0-7 patients.</p>
+            <button
+              type="button"
+              className="mt-4 rounded-md bg-primary px-3 py-2 text-sm font-medium text-white hover:bg-primary-dark"
+              onClick={() => setCreateOpen(true)}
+            >
+              Create first task
+            </button>
+          </div>
+        ) : filteredTasks.length === 0 ? (
+          <div className="rounded-xl border border-gray-200 bg-white p-10 text-center shadow-sm">
+            <h2 className="text-lg font-semibold text-neutral-darkest">No tasks match these filters.</h2>
+          </div>
+        ) : selectedTask ? (
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.25fr_1fr]">
+            <OutreachTaskQueue
+              tasks={filteredTasks}
+              selectedTaskId={selectedTaskId}
+              onSelectTask={handleSelectTask}
+            />
+            <OutreachTaskDetail
+              task={selectedTask}
+              onUpdateTask={updateTask}
+              onMarkComplete={handleMarkComplete}
+              onEscalate={handleEscalate}
+              onReschedule={handleReschedule}
+            />
+          </div>
+        ) : (
+          <OutreachTaskQueue
+            tasks={filteredTasks}
+            selectedTaskId={selectedTaskId}
+            onSelectTask={handleSelectTask}
+          />
+        )}
+      </div>
+
+      <CreateTaskModal
+        isOpen={createOpen}
+        patients={seedPatients}
+        onClose={() => setCreateOpen(false)}
+        onCreate={handleCreateTask}
+      />
     </div>
   );
 }

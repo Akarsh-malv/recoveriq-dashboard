@@ -7,6 +7,11 @@ import { UserRole } from '../types';
 interface AuthContextType {
   user: User | null;
   role: UserRole | null;
+  profile: {
+    fullName: string;
+    email: string;
+    roleLabel: string;
+  } | null;
   loading: boolean;
   signIn: (email: string, password: string, role: UserRole) => Promise<void>;
   signUp: (options: {
@@ -24,14 +29,98 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [role, setRole] = useState<UserRole | null>(null);
+  const [profile, setProfile] = useState<AuthContextType['profile']>(null);
   const [loading, setLoading] = useState(true);
 
+  const loadProfile = async (nextUser: User, nextRole: UserRole | null) => {
+    const fallbackFullName = (nextUser.user_metadata?.full_name as string | undefined) ?? '';
+    const fallbackEmail = nextUser.email ?? '';
+    const fallbackRoleLabel = nextRole === 'patient' ? 'Patient' : 'Clinical Staff';
+
+    if (!nextRole) {
+      setProfile({
+        fullName: fallbackFullName || 'Clinician',
+        email: fallbackEmail,
+        roleLabel: fallbackRoleLabel,
+      });
+      return;
+    }
+
+    if (nextRole === 'clinician') {
+      const { data } = await supabase
+        .from('clinicians')
+        .select('full_name,email,role')
+        .eq('user_id', nextUser.id)
+        .maybeSingle();
+
+      setProfile({
+        fullName: data?.full_name ?? fallbackFullName ?? 'Clinician',
+        email: data?.email ?? fallbackEmail,
+        roleLabel: data?.role ? 'Clinician' : 'Clinical Staff',
+      });
+      return;
+    }
+
+    const { data } = await supabase
+      .from('patients')
+      .select('full_name')
+      .eq('user_id', nextUser.id)
+      .maybeSingle();
+
+    setProfile({
+      fullName: data?.full_name ?? fallbackFullName ?? 'Patient',
+      email: fallbackEmail,
+      roleLabel: 'Patient',
+    });
+  };
+
+  const resolveRoleFromDatabase = async (nextUser: User): Promise<UserRole | null> => {
+    const metadataRole = nextUser.user_metadata?.role as UserRole | undefined;
+    if (metadataRole) {
+      return metadataRole;
+    }
+
+    const { data: clinician } = await supabase
+      .from('clinicians')
+      .select('id')
+      .eq('user_id', nextUser.id)
+      .maybeSingle();
+
+    if (clinician) {
+      return 'clinician';
+    }
+
+    const { data: patient } = await supabase
+      .from('patients')
+      .select('id')
+      .eq('user_id', nextUser.id)
+      .maybeSingle();
+
+    if (patient) {
+      return 'patient';
+    }
+
+    return null;
+  };
+
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setUser(session?.user ?? null);
-      const metadataRole = session?.user.user_metadata?.role as UserRole | undefined;
+      if (!session?.user) {
+        setRole(null);
+        setProfile(null);
+        setLoading(false);
+        return;
+      }
+
+      const metadataRole = session.user.user_metadata?.role as UserRole | undefined;
       const storedRole = localStorage.getItem('userRole') as UserRole | null;
-      setRole(metadataRole ?? storedRole);
+      const resolvedRole = metadataRole ?? storedRole ?? (await resolveRoleFromDatabase(session.user));
+      setRole(resolvedRole);
+      if (resolvedRole) {
+        localStorage.setItem('userRole', resolvedRole);
+      }
+      await loadProfile(session.user, resolvedRole);
       setLoading(false);
     });
 
@@ -40,12 +129,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(session?.user ?? null);
         if (!session) {
           setRole(null);
+          setProfile(null);
           localStorage.removeItem('userRole');
         } else {
           const metadataRole = session.user.user_metadata?.role as UserRole | undefined;
           if (metadataRole) {
             setRole(metadataRole);
             localStorage.setItem('userRole', metadataRole);
+            void loadProfile(session.user, metadataRole);
+          } else {
+            const storedRole = localStorage.getItem('userRole') as UserRole | null;
+            const resolvedRole = storedRole ?? (await resolveRoleFromDatabase(session.user));
+            setRole(resolvedRole);
+            if (resolvedRole) {
+              localStorage.setItem('userRole', resolvedRole);
+            }
+            void loadProfile(session.user, resolvedRole);
           }
         }
       })();
@@ -59,6 +158,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setRole(resolvedRole);
     localStorage.setItem('userRole', resolvedRole);
     setUser(user);
+    await loadProfile(user, resolvedRole);
   };
 
   const signUp = async ({ email, password, role: selectedRole, fullName, patientId }: {
@@ -121,16 +221,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setRole(resolvedRole);
     localStorage.setItem('userRole', resolvedRole);
     setUser(user);
+    await loadProfile(user, resolvedRole);
   };
 
   const signOut = async () => {
     await supabase.auth.signOut();
     setRole(null);
+    setProfile(null);
     localStorage.removeItem('userRole');
   };
 
   return (
-    <AuthContext.Provider value={{ user, role, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, role, profile, loading, signIn, signUp, signOut }}>
       {children}
     </AuthContext.Provider>
   );

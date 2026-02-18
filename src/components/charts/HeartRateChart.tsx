@@ -17,9 +17,9 @@ export function HeartRateChart({ data, baseline }: HeartRateChartProps) {
           <Line
             type="monotone"
             dataKey="value"
-            stroke="#ef4444"
+            stroke="#DC2626"
             strokeWidth={3}
-            dot={{ r: 3, strokeWidth: 1, stroke: '#ef4444', fill: '#fff' }}
+            dot={{ r: 3, strokeWidth: 1, stroke: '#DC2626', fill: '#fff' }}
             activeDot={{ r: 5 }}
           />
         </LineChart>

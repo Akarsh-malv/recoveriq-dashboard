@@ -10,62 +10,62 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   const [consented, setConsented] = useState(false);
 
   return (
-    <div className="min-h-screen bg-white flex flex-col max-w-md mx-auto">
-      <div className="flex-1 flex flex-col justify-center px-6 py-12">
-        <div className="flex justify-center mb-8">
-          <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center">
+    <div className="mx-auto flex min-h-screen max-w-md flex-col bg-white">
+      <div className="flex flex-1 flex-col justify-center px-6 py-12">
+        <div className="mb-8 flex justify-center">
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary">
             <Activity className="w-9 h-9 text-white" />
           </div>
         </div>
 
-        <h1 className="text-2xl font-semibold text-gray-900 text-center mb-3">
+        <h1 className="mb-3 text-center text-2xl font-semibold text-neutral-darkest">
           Welcome to RecoverIQ
         </h1>
 
-        <p className="text-base text-gray-600 text-center mb-8">
+        <p className="mb-8 text-center text-base text-neutral-mid">
           RecoverIQ helps your care team monitor your recovery progress through simple health data.
         </p>
 
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-5 mb-8">
-          <h2 className="text-sm font-semibold text-gray-900 mb-3">
+        <div className="mb-8 rounded-xl border border-primary/20 bg-primary-light p-5">
+          <h2 className="mb-3 text-sm font-semibold text-neutral-darkest">
             How it works
           </h2>
           <ul className="space-y-3">
             <li className="flex items-start gap-3">
-              <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <div className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-primary">
                 <Check className="w-3 h-3 text-white" />
               </div>
-              <span className="text-sm text-gray-700">
+              <span className="text-sm text-neutral-darkest">
                 Connect your wearable device or upload health data
               </span>
             </li>
             <li className="flex items-start gap-3">
-              <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <div className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-primary">
                 <Check className="w-3 h-3 text-white" />
               </div>
-              <span className="text-sm text-gray-700">
+              <span className="text-sm text-neutral-darkest">
                 Your care team reviews your progress regularly
               </span>
             </li>
             <li className="flex items-start gap-3">
-              <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <div className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-primary">
                 <Check className="w-3 h-3 text-white" />
               </div>
-              <span className="text-sm text-gray-700">
+              <span className="text-sm text-neutral-darkest">
                 Get support when you need it most
               </span>
             </li>
           </ul>
         </div>
 
-        <label className="flex items-start gap-3 mb-8 cursor-pointer">
+        <label className="mb-8 flex cursor-pointer items-start gap-3">
           <input
             type="checkbox"
             checked={consented}
             onChange={(e) => setConsented(e.target.checked)}
-            className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+            className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
           />
-          <span className="text-sm text-gray-700">
+          <span className="text-sm text-neutral-darkest">
             I understand and consent to sharing my health data with my care team to support my recovery.
           </span>
         </label>
@@ -78,7 +78,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
           Get Started
         </Button>
 
-        <p className="text-xs text-gray-500 text-center mt-6">
+        <p className="mt-6 text-center text-xs text-neutral-mid">
           Your data is private and only shared with your authorized care team
         </p>
       </div>

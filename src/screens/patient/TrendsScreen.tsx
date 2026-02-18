@@ -55,14 +55,14 @@ export function TrendsScreen() {
   }, {} as Record<string, Metric[]>);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-neutral-light">
       <div className="max-w-6xl mx-auto px-6 py-8">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <p className="text-sm text-gray-600">Insights</p>
-            <h1 className="text-3xl font-semibold text-gray-900">Your Trends</h1>
+            <p className="text-sm text-neutral-mid">Insights</p>
+            <h1 className="text-3xl font-semibold text-neutral-darkest">Your Trends</h1>
           </div>
-          <div className="px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-medium border border-blue-200">
+          <div className="rounded-full border border-primary/20 bg-primary-light px-3 py-1 text-xs font-medium text-primary">
             Updated daily
           </div>
         </div>
@@ -71,8 +71,8 @@ export function TrendsScreen() {
           {Object.keys(metricsByName).length === 0 ? (
             <div className="col-span-2 bg-white border border-gray-200 rounded-xl p-8 text-center shadow-sm">
               <Activity className="w-10 h-10 text-gray-400 mx-auto mb-2" />
-              <p className="text-sm text-gray-800 mb-1">No trend data available</p>
-              <p className="text-xs text-gray-500">Data will appear as your metrics are tracked</p>
+              <p className="mb-1 text-sm text-neutral-darkest">No trend data available</p>
+              <p className="text-xs text-neutral-mid">Data will appear as your metrics are tracked</p>
             </div>
           ) : (
             Object.entries(metricsByName).map(([metricName, metricList]) => {
@@ -83,17 +83,17 @@ export function TrendsScreen() {
               const percentChange = baseline !== 0 ? ((diff / baseline) * 100).toFixed(1) : '0';
 
               const getTrendColor = () => {
-                if (Math.abs(diff) < baseline * 0.1) return 'text-green-600';
-                if (Math.abs(diff) < baseline * 0.25) return 'text-amber-600';
-                return 'text-amber-600';
+                        if (Math.abs(diff) < baseline * 0.1) return 'text-success';
+                        if (Math.abs(diff) < baseline * 0.25) return 'text-warning';
+                        return 'text-warning';
               };
 
               return (
                 <div key={metricName} className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
                   <div className="flex items-center justify-between mb-3">
                     <div>
-                      <p className="text-xs uppercase tracking-wide text-gray-500">Metric</p>
-                      <h3 className="text-base font-semibold text-gray-900">
+                      <p className="text-xs uppercase tracking-wide text-neutral-mid">Metric</p>
+                      <h3 className="text-base font-semibold text-neutral-darkest">
                         {metricName.replace('_', ' ').toUpperCase()}
                       </h3>
                     </div>
@@ -102,10 +102,10 @@ export function TrendsScreen() {
 
                   <div className="flex items-end justify-between mb-4">
                     <div>
-                      <div className="text-2xl font-semibold text-gray-900">
-                        {current} <span className="text-base text-gray-500">{latest.unit}</span>
+                      <div className="text-2xl font-semibold text-neutral-darkest">
+                        {current} <span className="text-base text-neutral-mid">{latest.unit}</span>
                       </div>
-                      <div className="text-xs text-gray-500 mt-1">
+                      <div className="mt-1 text-xs text-neutral-mid">
                         Baseline: {baseline} {latest.unit}
                       </div>
                     </div>
@@ -115,9 +115,9 @@ export function TrendsScreen() {
                   </div>
 
                   <div className="space-y-2">
-                    <div className="text-xs font-medium text-gray-700 mb-1">Recent readings</div>
+                    <div className="mb-1 text-xs font-medium text-neutral-darkest">Recent readings</div>
                     {metricList.slice(0, 3).map((metric) => (
-                      <div key={metric.id} className="flex justify-between text-xs text-gray-600 py-2 border-t border-gray-100">
+                      <div key={metric.id} className="flex justify-between border-t border-gray-100 py-2 text-xs text-neutral-mid">
                         <span>{new Date(metric.recorded_at).toLocaleDateString()}</span>
                         <span className="font-medium">{metric.current_value} {metric.unit}</span>
                       </div>
@@ -125,7 +125,7 @@ export function TrendsScreen() {
                   </div>
 
                   <div className="mt-4 pt-4 border-t border-gray-100">
-                    <p className="text-xs text-gray-600">
+                    <p className="text-xs text-neutral-mid">
                       {Math.abs(parseFloat(percentChange)) < 10
                         ? 'Your metrics are stable and within expected ranges'
                         : 'Your care team is monitoring these changes'}

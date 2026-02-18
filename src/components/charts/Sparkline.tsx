@@ -5,7 +5,7 @@ interface SparklineProps {
   color?: string;
 }
 
-export function Sparkline({ data, color = '#0ea5e9' }: SparklineProps) {
+export function Sparkline({ data, color = '#2563EB' }: SparklineProps) {
   return (
     <div className="h-12 w-24">
       <ResponsiveContainer width="100%" height="100%">

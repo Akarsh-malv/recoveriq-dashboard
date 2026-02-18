@@ -1,3 +1,132 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  html {
+    font-family: "Segoe UI", "Avenir Next", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: smooth;
+    scrollbar-gutter: stable;
+  }
+
+  body {
+    @apply bg-neutral-light text-neutral-darkest;
+  }
+
+  html.dark body {
+    background-color: #0b1220;
+    color: #e5e7eb;
+  }
+
+  html.dark .bg-neutral-light {
+    background-color: #0b1220 !important;
+  }
+
+  html.dark .bg-white {
+    background-color: #111827 !important;
+  }
+
+  html.dark .border-gray-200 {
+    border-color: #1f2937 !important;
+  }
+
+  html.dark .border-gray-300 {
+    border-color: #374151 !important;
+  }
+
+  html.dark .text-neutral-darkest,
+  html.dark .text-gray-900,
+  html.dark .text-gray-800,
+  html.dark .text-gray-700 {
+    color: #f3f4f6 !important;
+  }
+
+  html.dark .text-neutral-mid,
+  html.dark .text-gray-600,
+  html.dark .text-gray-500,
+  html.dark .text-gray-400 {
+    color: #9ca3af !important;
+  }
+
+  html.dark .hover\:bg-neutral-light:hover {
+    background-color: #1f2937 !important;
+  }
+
+  html.dark .hover\:bg-gray-50:hover,
+  html.dark .hover\:bg-gray-100:hover {
+    background-color: #1f2937 !important;
+  }
+}
+
+/* Global scrollbar polish for smoother perceived UX */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(37, 99, 235, 0.35) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: rgba(37, 99, 235, 0.3);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(37, 99, 235, 0.5);
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+@layer components {
+  .app-card {
+    @apply rounded-xl border border-gray-200 bg-white shadow-sm;
+  }
+
+  .app-page {
+    @apply min-h-full bg-neutral-light;
+  }
+
+  .app-muted-text {
+    @apply text-neutral-mid;
+  }
+
+  .suggestion-marquee-track {
+    display: flex;
+    width: max-content;
+    animation: suggestion-marquee 18s linear infinite;
+  }
+
+  .suggestion-marquee-group {
+    display: flex;
+    gap: 0.5rem;
+    padding-right: 0.5rem;
+  }
+}
+
+@keyframes suggestion-marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}

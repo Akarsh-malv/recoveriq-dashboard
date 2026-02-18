@@ -2,26 +2,28 @@ import { useState } from 'react';
 import { useAuth } from './contexts/AuthContext';
 import { LoginScreen } from './screens/LoginScreen';
 import { ClinicianNav } from './components/ClinicianNav';
-import { PatientNav } from './components/PatientNav';
 import { ClinicianDashboard } from './screens/ClinicianDashboard';
+import { PatientsScreen } from './screens/PatientsScreen';
 import { PatientDetailScreen } from './screens/PatientDetailScreen';
 import { AlertsScreen } from './screens/AlertsScreen';
-import { OnboardingScreen } from './screens/patient/OnboardingScreen';
-import { HomeScreen } from './screens/patient/HomeScreen';
-import { TrendsScreen } from './screens/patient/TrendsScreen';
-import { ProfileScreen } from './screens/patient/ProfileScreen';
 import { LoadingState } from './components/LoadingState';
 import { OutreachScreen } from './screens/OutreachScreen';
+import { MomentumFilter } from './utils/dashboardInsights';
+import { SettingsPage } from './pages/Settings';
+import { buildPatientProfile, PatientDashboard } from './pages/PatientDashboard';
+import { PatientNav } from './components/PatientNav';
+import { PatientSettingsPage } from './pages/PatientSettingsPage';
+import { PatientAssistantPage } from './pages/PatientAssistantPage';
 
 type ClinicianView = 'dashboard' | 'patients' | 'alerts' | 'outreach' | 'settings' | 'patient-detail';
-type PatientView = 'onboarding' | 'home' | 'trends' | 'profile';
+type PatientView = 'home' | 'assistant' | 'settings';
 
 function App() {
-  const { user, role, loading, signIn, signUp, signOut } = useAuth();
+  const { user, role, profile, loading, signIn, signUp, signOut } = useAuth();
   const [clinicianView, setClinicianView] = useState<ClinicianView>('dashboard');
-  const [patientView, setPatientView] = useState<PatientView>('onboarding');
+  const [patientView, setPatientView] = useState<PatientView>('home');
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
-  const [patientOnboarded, setPatientOnboarded] = useState(false);
+  const [patientsMomentumFilter, setPatientsMomentumFilter] = useState<MomentumFilter | null>(null);
 
   if (loading) {
     return (
@@ -41,64 +43,84 @@ function App() {
       setClinicianView('patient-detail');
     };
 
-    const handleBackToDashboard = () => {
-      setClinicianView('dashboard');
+    const handleBackToPatientTriage = () => {
+      setClinicianView('patients');
       setSelectedPatientId(null);
     };
 
+    const handleMomentumFilterSelect = (filter: MomentumFilter) => {
+      setPatientsMomentumFilter(filter);
+      setClinicianView('patients');
+    };
+
     return (
-      <div className="h-screen flex bg-gray-50">
+      <div className="h-screen flex bg-neutral-light">
         <ClinicianNav
           currentView={clinicianView}
           onNavigate={(view) => setClinicianView(view as ClinicianView)}
           onLogout={signOut}
+          clinicianName={profile?.fullName}
         />
-        <div className="flex-1 overflow-hidden">
-          {clinicianView === 'dashboard' && (
-            <ClinicianDashboard onPatientClick={handlePatientClick} />
-          )}
-          {clinicianView === 'alerts' && <AlertsScreen />}
-          {clinicianView === 'outreach' && <OutreachScreen />}
-          {clinicianView === 'patient-detail' && selectedPatientId && (
-            <PatientDetailScreen
-              patientId={selectedPatientId}
-              onBack={handleBackToDashboard}
-            />
-          )}
-          {clinicianView === 'patients' && (
-            <ClinicianDashboard onPatientClick={handlePatientClick} />
-          )}
-          {clinicianView === 'settings' && (
-            <div className="h-full flex items-center justify-center">
-              <p className="text-gray-600">Settings coming soon</p>
-            </div>
-          )}
+        <div className="flex-1 min-h-0 flex flex-col">
+          <div className="flex-1 overflow-hidden">
+            {clinicianView === 'dashboard' && (
+              <ClinicianDashboard onMomentumFilterSelect={handleMomentumFilterSelect} />
+            )}
+            {clinicianView === 'alerts' && <AlertsScreen onPatientClick={handlePatientClick} />}
+            {clinicianView === 'outreach' && <OutreachScreen />}
+            {clinicianView === 'patient-detail' && selectedPatientId && (
+              <PatientDetailScreen
+                patientId={selectedPatientId}
+                onBack={handleBackToPatientTriage}
+              />
+            )}
+            {clinicianView === 'patients' && (
+              <PatientsScreen
+                onPatientClick={handlePatientClick}
+                momentumFilter={patientsMomentumFilter}
+                onMomentumFilterApplied={() => setPatientsMomentumFilter(null)}
+              />
+            )}
+            {clinicianView === 'settings' && (
+              <SettingsPage
+                profile={{
+                  fullName: profile?.fullName ?? '',
+                  email: profile?.email ?? user.email ?? '',
+                  roleLabel: profile?.roleLabel ?? 'Clinical Staff',
+                }}
+              />
+            )}
+          </div>
+          <div className="border-t border-gray-200 bg-primary-light px-6 py-2 text-[11px] text-neutral-mid">
+            Priority scores reflect deviations from a patient baseline recovery trajectory and are intended for workflow triage only. Not diagnostic.
+          </div>
         </div>
       </div>
     );
   }
 
   if (role === 'patient') {
-    if (!patientOnboarded && patientView === 'onboarding') {
-      return (
-        <OnboardingScreen
-          onComplete={() => {
-            setPatientOnboarded(true);
-            setPatientView('home');
-          }}
-        />
-      );
-    }
-
+    const patientProfile = buildPatientProfile(profile?.fullName);
     return (
-      <div className="min-h-screen bg-gray-50">
-        {patientView === 'home' && <HomeScreen />}
-        {patientView === 'trends' && <TrendsScreen />}
-        {patientView === 'profile' && <ProfileScreen />}
+      <div className="h-screen flex bg-neutral-light">
         <PatientNav
           currentView={patientView}
-          onNavigate={(view) => setPatientView(view as PatientView)}
+          onNavigate={setPatientView}
+          onLogout={signOut}
+          patientName={profile?.fullName}
         />
+        <div className="flex-1 min-h-0">
+          {patientView === 'home' && <PatientDashboard profile={patientProfile} />}
+          {patientView === 'assistant' && <PatientAssistantPage profile={patientProfile} />}
+          {patientView === 'settings' && (
+            <PatientSettingsPage
+              profile={{
+                fullName: profile?.fullName ?? patientProfile.name,
+                email: profile?.email ?? user.email ?? '',
+              }}
+            />
+          )}
+        </div>
       </div>
     );
   }

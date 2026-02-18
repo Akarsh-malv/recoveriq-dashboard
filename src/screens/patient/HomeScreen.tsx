@@ -87,20 +87,20 @@ export function HomeScreen() {
   const status = getRecoveryStatus();
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-neutral-light">
       <div className="max-w-6xl mx-auto px-6 py-8 space-y-8">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-gray-600">Welcome back</p>
-            <h1 className="text-3xl font-semibold text-gray-900">Hi {patientName.split(' ')[0] || 'there'}</h1>
+            <p className="text-sm text-neutral-mid">Welcome back</p>
+            <h1 className="text-3xl font-semibold text-neutral-darkest">Hi {patientName.split(' ')[0] || 'there'}</h1>
           </div>
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center font-semibold">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary font-semibold text-white">
               {(patientName || 'You').charAt(0).toUpperCase()}
             </div>
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-neutral-mid">
               Securely synced
-              <div className="flex items-center gap-1 text-emerald-600 text-xs font-semibold">
+              <div className="flex items-center gap-1 text-xs font-semibold text-success">
                 <ShieldCheck className="w-4 h-4" /> Protected data
               </div>
             </div>
@@ -110,21 +110,21 @@ export function HomeScreen() {
         <div className="grid grid-cols-3 gap-6">
           <div className="col-span-2 bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-11 h-11 rounded-full bg-blue-50 flex items-center justify-center">
-                <TrendingUp className="w-5 h-5 text-blue-600" />
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary-light">
+                <TrendingUp className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <p className="text-xs uppercase tracking-wide text-blue-600 font-semibold">Recovery Status</p>
-                <h2 className="text-lg font-semibold text-gray-900">{status.message}</h2>
-                <p className="text-sm text-gray-600">{status.description}</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-primary">Recovery Status</p>
+                <h2 className="text-lg font-semibold text-neutral-darkest">{status.message}</h2>
+                <p className="text-sm text-neutral-mid">{status.description}</p>
               </div>
             </div>
           </div>
 
           <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-            <p className="text-xs uppercase tracking-wide text-gray-500 font-semibold mb-2">Need help?</p>
-            <p className="text-sm text-gray-700 mb-3">If you have questions, your care team is here to help.</p>
-            <button className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition w-full">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-mid">Need help?</p>
+            <p className="mb-3 text-sm text-neutral-darkest">If you have questions, your care team is here to help.</p>
+            <button className="w-full rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-primary-dark">
               Contact care team
             </button>
           </div>
@@ -133,16 +133,16 @@ export function HomeScreen() {
         <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <p className="text-xs uppercase tracking-wide text-gray-500 font-semibold">Vitals</p>
-              <h3 className="text-lg font-semibold text-gray-900">Your Metrics</h3>
+              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-mid">Vitals</p>
+              <h3 className="text-lg font-semibold text-neutral-darkest">Your Metrics</h3>
             </div>
           </div>
 
           {Object.keys(latestMetrics).length === 0 ? (
             <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 text-center">
               <Activity className="w-10 h-10 text-gray-400 mx-auto mb-2" />
-              <p className="text-sm text-gray-700">No data connected yet</p>
-              <p className="text-xs text-gray-500">Connect your wearable to start tracking</p>
+              <p className="text-sm text-neutral-darkest">No data connected yet</p>
+              <p className="text-xs text-neutral-mid">Connect your wearable to start tracking</p>
             </div>
           ) : (
             <div className="grid grid-cols-3 gap-4">
